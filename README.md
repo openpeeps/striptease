@@ -1,5 +1,4 @@
 <p align="center">
-  <img src="https://github.com/openpeeps/PKG/blob/main/.github/logo.png" width="90px"><br>
   Strip metadata from audio, images and videos. 👑 Written in Nim language
 </p>
 
