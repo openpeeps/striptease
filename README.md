@@ -26,7 +26,7 @@
 
 ## Usage
 ```
-striptease 0.3.0 – strip metadata from photos, PDFs, videos, and documents
+striptease 0.1.0 – strip metadata from photos, PDFs, videos, and documents
 
 MIT license | Made by Humans from OpenPeeps
   https://github.com/openpeeps/striptease
