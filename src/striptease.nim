@@ -2,7 +2,7 @@
 # Supports WAV audio, JPEG/PNG/GIF/WebP images and MP4/MOV/AVI/MKV
 # video. Each format module plugs in through the dispatcher below.
 
-import std/[os, parseopt, strutils]
+import std/[os, parseopt, strutils, json]
 
 import striptease/stripapi
 import striptease/wavstrip
@@ -13,8 +13,12 @@ import striptease/webpstrip
 import striptease/mp4strip
 import striptease/avistrip
 import striptease/mkvstrip
+import striptease/inspect
+import striptease/rawstrip
+import striptease/cr3strip
+import striptease/heicstrip
 
-const versionStr = "0.2.0"
+const versionStr = "0.3.0"
 
 const
   ansiReset = "\e[0m"
@@ -41,7 +45,9 @@ proc errPrefix(): string =
   paint("error:", ansiRed)
 
 const supportedExts = [".wav", ".jpg", ".jpeg", ".png", ".gif", ".webp",
-  ".mp4", ".mov", ".m4v", ".avi", ".mkv", ".webm"]
+  ".mp4", ".mov", ".m4v", ".avi", ".mkv", ".webm", ".cr2", ".nef", ".nrw",
+  ".arw", ".srf", ".dng", ".rw2", ".orf", ".pef", ".srw", ".tif", ".tiff",
+  ".cr3", ".heic", ".heif", ".hif"]
 
 proc formatKind(path: string): string =
   ## Returns a short format key ("wav", "jpeg", ...) or "" if unsupported.
@@ -63,6 +69,18 @@ proc formatKind(path: string): string =
     return "avi"
   if lower.endsWith(".mkv") or lower.endsWith(".webm"):
     return "mkv"
+  if lower.endsWith(".cr2") or lower.endsWith(".nef") or
+      lower.endsWith(".nrw") or lower.endsWith(".arw") or
+      lower.endsWith(".srf") or lower.endsWith(".dng") or
+      lower.endsWith(".rw2") or lower.endsWith(".orf") or
+      lower.endsWith(".pef") or lower.endsWith(".srw") or
+      lower.endsWith(".tif") or lower.endsWith(".tiff"):
+    return "raw"
+  if lower.endsWith(".cr3"):
+    return "cr3"
+  if lower.endsWith(".heic") or lower.endsWith(".heif") or
+      lower.endsWith(".hif"):
+    return "heic"
   return ""
 
 proc isSupportedPath(path: string): bool =
@@ -77,13 +95,17 @@ proc printHelp() =
   echo label("required:")
   echo "  <input>             " & grey("file or directory (mixed formats allowed)")
   echo "  -o, --out:<dir>     " & grey("output directory for cleaned copies")
-  echo grey("                      (single file input plus --out:foo.ext writes one file)")
+  echo grey("                      (single file input plus --out:foo.ext writes one file,")
+  echo grey("                       not needed with --inspect)")
   echo ""
   echo label("supported formats:")
-  echo "  " & grey("audio: .wav | images: .jpg .jpeg .png .gif .webp | video: .mp4 .mov .m4v .avi .mkv .webm")
+  echo "  " & grey("audio: .wav | images: .jpg .jpeg .png .gif .webp")
+  echo "  " & grey("raw: .cr2 .nef .nrw .arw .srf .dng .rw2 .orf .pef .srw .tif .tiff")
+  echo "  " & grey("video: .mp4 .mov .m4v .avi .mkv .webm | canon raw: .cr3 | heic: .heic .heif .hif")
   echo ""
   echo label("options:")
   echo "  --dry-run           " & grey("report only, write nothing")
+  echo "  --inspect           " & grey("print metadata as pretty JSON, write nothing")
   echo "  --verbose           " & grey("per file kept and dropped chunks plus bytes saved")
   echo "  --overwrite         " & grey("overwrite existing files in out dir (default: skip)")
   echo "  --keep-musical      " & grey("WAV only: also keep cue, smpl, inst, acid chunks")
@@ -149,9 +171,41 @@ proc stripByFormat(kind: string, data: string,
     return stripAviData(data)
   of "mkv":
     return stripMkvData(data)
+  of "raw":
+    return stripRawData(data)
+  of "cr3":
+    return stripCr3Data(data)
+  of "heic":
+    return stripHeicData(data)
   else:
     raise newException(UnsupportedFormatError,
       "unsupported format: " & kind)
+
+proc inspectOneFile(inPath: string, opts: StripOptions,
+    reports: var JsonNode): bool =
+  var data: string
+  try:
+    data = readFile(inPath)
+  except IOError as e:
+    reports.add(%* {"file": inPath, "format": "", "error": "cannot read: " &
+        e.msg})
+    return false
+  let kind = formatKind(inPath)
+  try:
+    let (_, res) = stripByFormat(kind, data, opts.keepMusical)
+    let meta = inspectData(kind, data, opts.keepMusical)
+    var dropped = newJArray()
+    for d in res.dropped:
+      dropped.add(%* {"id": d.id.strip(), "size": int(d.size)})
+    reports.add(%* {"file": inPath, "format": kind, "bytes": data.len,
+      "metadata": meta, "dropped": dropped})
+    return true
+  except StripError as e:
+    reports.add(%* {"file": inPath, "format": kind, "error": e.msg})
+    return false
+  except CatchableError as e:
+    reports.add(%* {"file": inPath, "format": kind, "error": e.msg})
+    return false
 
 proc processOneFile(inPath: string, outPath: string,
     opts: StripOptions): bool =
@@ -219,6 +273,8 @@ proc main(): int =
         outArg = val
       of "dry-run":
         opts.dryRun = true
+      of "inspect":
+        opts.inspect = true
       of "verbose":
         opts.verbose = true
       of "overwrite":
@@ -237,12 +293,15 @@ proc main(): int =
   if showHelp:
     printHelp()
     return 0
-  if input == "" or outArg == "":
+  if input == "" or (outArg == "" and not opts.inspect):
     printHelp()
-    echo "\n" & errPrefix() & " input and --out are required"
+    if opts.inspect:
+      echo "\n" & errPrefix() & " input is required"
+    else:
+      echo "\n" & errPrefix() & " input and --out are required"
     return 1
   let inputWasFile = fileExists(input)
-  let outIsFile = inputWasFile and isSupportedPath(outArg)
+  let outIsFile = inputWasFile and outArg != "" and isSupportedPath(outArg)
   if not inputWasFile and not dirExists(input):
     echo errPrefix() & " input not found: " & input
     return 1
@@ -259,7 +318,7 @@ proc main(): int =
     echo "no supported files found in: " & input &
       " (" & supportedExts.join(" ") & ")"
     return 1
-  if not opts.dryRun:
+  if not opts.dryRun and not opts.inspect:
     try:
       if outIsFile:
         createDir(parentDir(outArg))
@@ -270,12 +329,24 @@ proc main(): int =
       return 1
   var okCount = 0
   var failCount = 0
+  var reports = newJArray()
   for f in files:
+    if opts.inspect:
+      if inspectOneFile(f, opts, reports):
+        inc okCount
+      else:
+        inc failCount
+      continue
     let outPath = resolveOutPath(f, inputWasFile, outArg, outIsFile)
     if processOneFile(f, outPath, opts):
       inc okCount
     else:
       inc failCount
+  if opts.inspect:
+    echo pretty(reports)
+    if failCount > 0:
+      return 2
+    return 0
   echo "done: " & $okCount & " ok, " & $failCount & " failed"
   if failCount > 0:
     return 2

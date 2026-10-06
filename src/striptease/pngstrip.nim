@@ -15,7 +15,7 @@ const pngSig = "\x89PNG\x0D\x0A\x1A\x0A"
 
 const pngSignature* = pngSig
 
-func isKeepChunk(id: string): bool =
+func isKeepChunk*(id: string): bool =
   case id
   of "IHDR", "PLTE", "IDAT", "IEND", "tRNS",
      "sRGB", "gAMA", "cHRM", "sBIT", "bKGD",

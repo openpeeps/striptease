@@ -32,93 +32,110 @@ func isContainer(typ: string): bool =
   else:
     false
 
+func isoContainer*(typ: string): bool =
+  ## Container boxes shared by MP4/MOV, CR3 and HEIC.
+  case typ
+  of "moov", "trak", "edts", "mdia", "minf", "dinf", "stbl",
+     "mvex", "moof", "traf", "mfra", "strk", "sinf":
+    true
+  else:
+    false
+
+type IsoBox* = object
+  offset*: int
+  payloadStart*: int
+  boxEnd*: int
+  typ*: string
+  total*: int
+
+proc readIsoBoxes*(buf: string, start, finish: int): seq[IsoBox] =
+  ## Strict ISO BMFF box walker. Raises StripError on truncation or
+  ## invalid sizes. Handles 32-bit sizes, largesize and size-0
+  ## (box to end of parent).
+  var pos = start
+  while pos + 8 <= finish:
+    let size32 = getBe32(buf, pos)
+    let typ = buf[pos + 4 .. pos + 7]
+    var headerLen = 8
+    var boxEnd = 0
+    if size32 == 1:
+      if pos + 16 > finish:
+        raise newException(StripError,
+          "truncated box '" & typ & "' (missing largesize)")
+      let largesize = getBe64(buf, pos + 8)
+      if largesize < 16:
+        raise newException(StripError,
+          "invalid box size for '" & typ & "'")
+      if uint64(pos) + largesize > uint64(finish):
+        raise newException(StripError,
+          "truncated box '" & typ & "' (declared " & $largesize &
+          " bytes, parent ends early)")
+      headerLen = 16
+      boxEnd = pos + int(largesize)
+    elif size32 == 0:
+      boxEnd = finish
+    else:
+      if size32 < 8:
+        raise newException(StripError,
+          "invalid box size for '" & typ & "'")
+      if uint64(pos) + uint64(size32) > uint64(finish):
+        raise newException(StripError,
+          "truncated box '" & typ & "' (declared " & $size32 &
+          " bytes, parent ends early)")
+      boxEnd = pos + int(size32)
+    result.add(IsoBox(offset: pos, payloadStart: pos + headerLen,
+      boxEnd: boxEnd, typ: typ, total: boxEnd - pos))
+    if boxEnd <= pos:
+      raise newException(StripError, "invalid box (zero progress)")
+    pos = boxEnd
+
+proc neutraliseIsoBox*(buf: var string, b: IsoBox) =
+  ## Turns a box into `free` with zeroed payload, preserving size.
+  buf[b.offset + 4] = 'f'
+  buf[b.offset + 5] = 'r'
+  buf[b.offset + 6] = 'e'
+  buf[b.offset + 7] = 'e'
+  for i in b.payloadStart ..< b.boxEnd:
+    buf[i] = '\0'
+
+proc zeroIsoTimestamps*(buf: var string, b: IsoBox) =
+  ## Zeroes creation/modification times of mvhd/tkhd/mdhd in place.
+  if b.payloadStart + 4 > b.boxEnd:
+    return
+  let version = ord(buf[b.payloadStart])
+  if version == 1:
+    if b.payloadStart + 4 + 16 <= b.boxEnd:
+      for i in (b.payloadStart + 4) ..< (b.payloadStart + 4 + 16):
+        buf[i] = '\0'
+  else:
+    if b.payloadStart + 4 + 8 <= b.boxEnd:
+      for i in (b.payloadStart + 4) ..< (b.payloadStart + 4 + 8):
+        buf[i] = '\0'
+
 func isMetadataBox(typ: string): bool =
   typ == "udta" or typ == "meta" or typ == "uuid"
 
 func isTimestampBox(typ: string): bool =
   typ == "mvhd" or typ == "tkhd" or typ == "mdhd"
 
-proc neutralise(output: var string, payloadStart, boxEnd: int,
-    typePos: int) =
-  output[typePos] = 'f'
-  output[typePos + 1] = 'r'
-  output[typePos + 2] = 'e'
-  output[typePos + 3] = 'e'
-  for i in payloadStart ..< boxEnd:
-    output[i] = '\0'
-
-proc sanitiseTimestamps(output: var string, typ: string,
-    payloadStart, boxEnd: int) =
-  if payloadStart + 4 > boxEnd:
-    return
-  let version = ord(output[payloadStart])
-  if version == 1:
-    if payloadStart + 4 + 16 <= boxEnd:
-      for i in (payloadStart + 4) ..< (payloadStart + 4 + 16):
-        output[i] = '\0'
-  else:
-    if payloadStart + 4 + 8 <= boxEnd:
-      for i in (payloadStart + 4) ..< (payloadStart + 4 + 8):
-        output[i] = '\0'
-
 proc walkBoxes(output: var string, startPos, endPos: int,
     res: var StripResult) =
-  var pos = startPos
-  while pos + 8 <= endPos:
-    let size32 = getBe32(output, pos)
-    let typ = output[pos + 4 .. pos + 7]
-    var headerLen = 8
-    var boxEnd: int
-    var payloadStart: int
-    if size32 == 1:
-      if pos + 16 > endPos:
-        raise newException(StripError,
-          "truncated MP4 box '" & typ & "' (missing largesize)")
-      let largesize = getBe64(output, pos + 8)
-      if largesize < 16:
-        raise newException(StripError,
-          "invalid MP4 box size for '" & typ & "'")
-      if uint64(pos) + largesize > uint64(endPos):
-        raise newException(StripError,
-          "truncated MP4 box '" & typ & "' (declared " & $largesize &
-          " bytes, file ends early)")
-      headerLen = 16
-      boxEnd = pos + int(largesize)
-      payloadStart = pos + headerLen
-    elif size32 == 0:
-      boxEnd = endPos
-      payloadStart = pos + headerLen
-    else:
-      if size32 < 8:
-        raise newException(StripError,
-          "invalid MP4 box size for '" & typ & "'")
-      if uint64(pos) + uint64(size32) > uint64(endPos):
-        raise newException(StripError,
-          "truncated MP4 box '" & typ & "' (declared " & $size32 &
-          " bytes, file ends early)")
-      boxEnd = pos + int(size32)
-      payloadStart = pos + headerLen
-    let totalLen = boxEnd - pos
+  for b in readIsoBoxes(output, startPos, endPos):
+    let typ = b.typ
+    let totalLen = b.total
     if isMetadataBox(typ):
       res.dropped.add(ChunkReport(id: typ, size: uint32(totalLen),
         action: caDrop))
-      neutralise(output, payloadStart, boxEnd, pos + 4)
+      neutraliseIsoBox(output, b)
     elif isTimestampBox(typ):
       res.kept.add(ChunkReport(id: typ, size: uint32(totalLen),
         action: caKeep))
-      sanitiseTimestamps(output, typ, payloadStart, boxEnd)
+      zeroIsoTimestamps(output, b)
     elif isContainer(typ):
       res.kept.add(ChunkReport(id: typ, size: uint32(totalLen),
         action: caKeep))
-      if payloadStart < boxEnd:
-        walkBoxes(output, payloadStart, boxEnd, res)
-    else:
-      # Leaf box (ftyp, mdat, stbl entries, ...). Record top-level
-      # and moov-direct boxes; skip deep leaves to keep reports short.
-      discard
-    if boxEnd <= pos:
-      raise newException(StripError, "invalid MP4 box (zero progress)")
-    pos = boxEnd
+      if b.payloadStart < b.boxEnd:
+        walkBoxes(output, b.payloadStart, b.boxEnd, res)
 
 proc stripMp4Data*(data: string): tuple[output: string, res: StripResult] =
   var res: StripResult
