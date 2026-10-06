@@ -1,0 +1,4 @@
+nimTitle	wavstrip	striptease/wavstrip.html	module striptease/wavstrip		0
+nim	isKeepChunk	striptease/wavstrip.html#isKeepChunk,string,bool	proc isKeepChunk(id: string; keepMusical: bool): bool		21
+nim	stripWavData	striptease/wavstrip.html#stripWavData,string,bool	proc stripWavData(data: string; keepMusical: bool): tuple[output: string,\n    res: StripResult]		84
+nim	analyzeWavData	striptease/wavstrip.html#analyzeWavData,string,bool	proc analyzeWavData(data: string; keepMusical: bool): StripResult		104

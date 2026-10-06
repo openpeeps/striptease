@@ -1,0 +1,3 @@
+nimTitle	avistrip	striptease/avistrip.html	module striptease/avistrip		0
+nim	stripAviData	striptease/avistrip.html#stripAviData,string	proc stripAviData(data: string): tuple[output: string, res: StripResult]		90
+nim	analyzeAviData	striptease/avistrip.html#analyzeAviData,string	proc analyzeAviData(data: string): StripResult		110

@@ -1,0 +1,8 @@
+nimTitle	mp4strip	striptease/mp4strip.html	module striptease/mp4strip		0
+nim	isoContainer	striptease/mp4strip.html#isoContainer,string	proc isoContainer(typ: string): bool		35
+nim	IsoBox	striptease/mp4strip.html#IsoBox	object IsoBox		44
+nim	readIsoBoxes	striptease/mp4strip.html#readIsoBoxes,string,int,int	proc readIsoBoxes(buf: string; start, finish: int): seq[IsoBox]		51
+nim	neutraliseIsoBox	striptease/mp4strip.html#neutraliseIsoBox,string,IsoBox	proc neutraliseIsoBox(buf: var string; b: IsoBox)		92
+nim	zeroIsoTimestamps	striptease/mp4strip.html#zeroIsoTimestamps,string,IsoBox	proc zeroIsoTimestamps(buf: var string; b: IsoBox)		101
+nim	stripMp4Data	striptease/mp4strip.html#stripMp4Data,string	proc stripMp4Data(data: string): tuple[output: string, res: StripResult]		140
+nim	analyzeMp4Data	striptease/mp4strip.html#analyzeMp4Data,string	proc analyzeMp4Data(data: string): StripResult		160

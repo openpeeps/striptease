@@ -1,0 +1,5 @@
+nimTitle	cr3strip	striptease/cr3strip.html	module striptease/cr3strip		0
+nim	sanitiseUuid	striptease/cr3strip.html#sanitiseUuid,string,IsoBox,StripResult	proc sanitiseUuid(output: var string; b: IsoBox; res: var StripResult)		52
+nim	stripCr3Data	striptease/cr3strip.html#stripCr3Data,string	proc stripCr3Data(data: string): tuple[output: string, res: StripResult]		117
+nim	analyzeCr3Data	striptease/cr3strip.html#analyzeCr3Data,string	proc analyzeCr3Data(data: string): StripResult		134
+nim	inspectCr3Data	striptease/cr3strip.html#inspectCr3Data,string	proc inspectCr3Data(data: string): JsonNode		138

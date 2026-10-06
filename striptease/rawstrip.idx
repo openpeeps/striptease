@@ -1,0 +1,7 @@
+nimTitle	rawstrip	striptease/rawstrip.html	module striptease/rawstrip		0
+nim	jpegMetadataRanges	striptease/rawstrip.html#jpegMetadataRanges,string,int,int	proc jpegMetadataRanges(buf: string; start, finish: int): seq[(int, int)]		181
+nim	sanitiseTiff	striptease/rawstrip.html#sanitiseTiff,string,int,int,StripResult	proc sanitiseTiff(buf: var string; tiffStart, limit: int; res: var StripResult)		311
+nim	stripRawData	striptease/rawstrip.html#stripRawData,string	proc stripRawData(data: string): tuple[output: string, res: StripResult]		331
+nim	analyzeRawData	striptease/rawstrip.html#analyzeRawData,string	proc analyzeRawData(data: string): StripResult		339
+nim	inspectTiff	striptease/rawstrip.html#inspectTiff,string,int,int	proc inspectTiff(buf: string; tiffStart, limit: int): JsonNode		525
+nim	inspectRawData	striptease/rawstrip.html#inspectRawData,string	proc inspectRawData(data: string): JsonNode		535

@@ -1,0 +1,6 @@
+nimTitle	pngstrip	striptease/pngstrip.html	module striptease/pngstrip		0
+nim	pngSignature	striptease/pngstrip.html#pngSignature	const pngSignature		16
+nim	isKeepChunk	striptease/pngstrip.html#isKeepChunk,string	proc isKeepChunk(id: string): bool		18
+nim	stripPngData	striptease/pngstrip.html#stripPngData,string	proc stripPngData(data: string): tuple[output: string, res: StripResult]		66
+nim	analyzePngData	striptease/pngstrip.html#analyzePngData,string	proc analyzePngData(data: string): StripResult		133
+nim	encodeChunk	striptease/pngstrip.html#encodeChunk,string,string	proc encodeChunk(id, payload: string): string		137

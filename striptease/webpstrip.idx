@@ -1,0 +1,3 @@
+nimTitle	webpstrip	striptease/webpstrip.html	module striptease/webpstrip		0
+nim	stripWebpData	striptease/webpstrip.html#stripWebpData,string	proc stripWebpData(data: string): tuple[output: string, res: StripResult]		27
+nim	analyzeWebpData	striptease/webpstrip.html#analyzeWebpData,string	proc analyzeWebpData(data: string): StripResult		93

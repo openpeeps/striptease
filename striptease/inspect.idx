@@ -1,0 +1,10 @@
+nimTitle	inspect	striptease/inspect.html	module striptease/inspect		0
+nim	inspectWavData	striptease/inspect.html#inspectWavData,string,bool	proc inspectWavData(data: string; keepMusical: bool): JsonNode		65
+nim	inspectAviData	striptease/inspect.html#inspectAviData,string	proc inspectAviData(data: string): JsonNode		82
+nim	inspectJpegData	striptease/inspect.html#inspectJpegData,string	proc inspectJpegData(data: string): JsonNode		122
+nim	inspectPngData	striptease/inspect.html#inspectPngData,string	proc inspectPngData(data: string): JsonNode		160
+nim	inspectGifData	striptease/inspect.html#inspectGifData,string	proc inspectGifData(data: string): JsonNode		262
+nim	inspectWebpData	striptease/inspect.html#inspectWebpData,string	proc inspectWebpData(data: string): JsonNode		323
+nim	inspectMp4Data	striptease/inspect.html#inspectMp4Data,string	proc inspectMp4Data(data: string): JsonNode		427
+nim	inspectMkvData	striptease/inspect.html#inspectMkvData,string	proc inspectMkvData(data: string): JsonNode		589
+nim	inspectData	striptease/inspect.html#inspectData,string,string	proc inspectData(kind: string; data: string; keepMusical = false): JsonNode		715

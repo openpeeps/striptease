@@ -1,0 +1,3 @@
+nimTitle	gifstrip	striptease/gifstrip.html	module striptease/gifstrip		0
+nim	stripGifData	striptease/gifstrip.html#stripGifData,string	proc stripGifData(data: string): tuple[output: string, res: StripResult]		29
+nim	analyzeGifData	striptease/gifstrip.html#analyzeGifData,string	proc analyzeGifData(data: string): StripResult		122

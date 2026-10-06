@@ -1,0 +1,4 @@
+nimTitle	heicstrip	striptease/heicstrip.html	module striptease/heicstrip		0
+nim	stripHeicData	striptease/heicstrip.html#stripHeicData,string	proc stripHeicData(data: string): tuple[output: string, res: StripResult]		354
+nim	analyzeHeicData	striptease/heicstrip.html#analyzeHeicData,string	proc analyzeHeicData(data: string): StripResult		369
+nim	inspectHeicData	striptease/heicstrip.html#inspectHeicData,string	proc inspectHeicData(data: string): JsonNode		373

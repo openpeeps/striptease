@@ -1,0 +1,17 @@
+nimTitle	stripapi	striptease/stripapi.html	module striptease/stripapi		0
+nim	caKeep	striptease/stripapi.html#caKeep	ChunkAction.caKeep		10
+nim	caDrop	striptease/stripapi.html#caDrop	ChunkAction.caDrop		10
+nim	ChunkAction	striptease/stripapi.html#ChunkAction	enum ChunkAction		10
+nim	ChunkReport	striptease/stripapi.html#ChunkReport	object ChunkReport		14
+nim	StripOptions	striptease/stripapi.html#StripOptions	object StripOptions		19
+nim	StripResult	striptease/stripapi.html#StripResult	object StripResult		26
+nim	StripError	striptease/stripapi.html#StripError	object StripError		32
+nim	UnsupportedFormatError	striptease/stripapi.html#UnsupportedFormatError	object UnsupportedFormatError		33
+nim	defaultOptions	striptease/stripapi.html#defaultOptions	proc defaultOptions(): StripOptions		35
+nim	bytesSaved	striptease/stripapi.html#bytesSaved,StripResult	proc bytesSaved(r: StripResult): int		39
+nim	actionLabel	striptease/stripapi.html#actionLabel,ChunkAction	proc actionLabel(a: ChunkAction): string		42
+nim	sliceAt	striptease/stripapi.html#sliceAt,string,int,int	proc sliceAt(buf: string; a, b: int): string		47
+nim	sanitise	striptease/stripapi.html#sanitise,string,int	proc sanitise(s: string; maxLen = 4000): string		54
+nim	cleanTag	striptease/stripapi.html#cleanTag,string	proc cleanTag(s: string): string		81
+nim	textOrNull	striptease/stripapi.html#textOrNull,string,int	proc textOrNull(s: string; maxLen = 300): JsonNode		86
+nim	jUint	striptease/stripapi.html#jUint,uint64	proc jUint(v: uint64): JsonNode		102

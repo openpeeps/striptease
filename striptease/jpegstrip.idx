@@ -1,0 +1,3 @@
+nimTitle	jpegstrip	striptease/jpegstrip.html	module striptease/jpegstrip		0
+nim	stripJpegData	striptease/jpegstrip.html#stripJpegData,string	proc stripJpegData(data: string): tuple[output: string, res: StripResult]		48
+nim	analyzeJpegData	striptease/jpegstrip.html#analyzeJpegData,string	proc analyzeJpegData(data: string): StripResult		137
