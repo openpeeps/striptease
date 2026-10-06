@@ -24,6 +24,37 @@
 - [x] `--dry-run` and `--verbose` reporting, `--overwrite` protection by default
 - [x] `--inspect` prints embedded metadata as pretty JSON without touching files
 
+## Usage
+```
+striptease 0.3.0 – strip metadata from photos, PDFs, videos, and documents
+
+MIT license | Made by Humans from OpenPeeps
+  https://github.com/openpeeps/striptease
+
+usage: striptease <input|input-dir> --out:<dir> [options]
+
+required:
+  <input>             file or directory (mixed formats allowed)
+  -o, --out:<dir>     output directory for cleaned copies
+                      (single file input plus --out:foo.ext writes one file,
+                       not needed with --inspect)
+
+supported formats:
+  audio: .wav | images: .jpg .jpeg .png .gif .webp
+  raw: .cr2 .nef .nrw .arw .srf .dng .rw2 .orf .pef .srw .tif .tiff
+  video: .mp4 .mov .m4v .avi .mkv .webm | canon raw: .cr3 | heic: .heic .heif .hif
+
+options:
+  --dry-run           report only, write nothing
+  --inspect           print metadata as pretty JSON, write nothing
+  --verbose           per file kept and dropped chunks plus bytes saved
+  --overwrite         overwrite existing files in out dir (default: skip)
+  --keep-musical      WAV only: also keep cue, smpl, inst, acid chunks
+  -h, --help          show this help
+  --version           show version
+
+```
+
 ## Examples
 Strip a single photo (writes one file):
 
