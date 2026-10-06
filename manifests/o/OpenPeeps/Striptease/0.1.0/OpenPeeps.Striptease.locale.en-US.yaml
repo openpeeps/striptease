@@ -1,0 +1,25 @@
+PackageIdentifier: OpenPeeps.Striptease
+PackageVersion: 0.1.0
+PackageLocale: en-US
+Publisher: OpenPeeps
+PublisherUrl: https://github.com/openpeeps
+PackageName: striptease
+PackageUrl: https://github.com/openpeeps/striptease
+License: MIT
+LicenseUrl: https://github.com/openpeeps/striptease/blob/main/LICENSE
+Copyright: Copyright (c) 2026 OpenPeeps
+ShortDescription: Strip metadata tags from audio, image, raw and video files
+Description: Strip metadata from photos, audios, and videos. Written in Nim, zero dependencies, single static binary. Supports WAV, JPEG, PNG, GIF, WebP, TIFF/RAW, CR3, HEIC, MP4/MOV, AVI and MKV. Size-preserving edits keep files playable with no re-encode. Includes --dry-run, --inspect and --verbose reporting.
+Moniker: striptease
+Tags:
+- metadata
+- exif
+- privacy
+- photo
+- video
+- audio
+- cli
+- strip
+ReleaseNotesUrl: https://github.com/openpeeps/striptease/releases/tag/0.1.0
+ManifestType: defaultLocale
+ManifestVersion: 1.12.0

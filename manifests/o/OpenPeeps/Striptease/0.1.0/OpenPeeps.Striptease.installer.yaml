@@ -1,0 +1,18 @@
+PackageIdentifier: OpenPeeps.Striptease
+PackageVersion: 0.1.0
+Platform:
+- Windows.Desktop
+MinimumOSVersion: 10.0.17763.0
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+- RelativeFilePath: striptease_windows-x86_64/striptease.exe
+  PortableCommandAlias: striptease
+UpgradeBehavior: unpack
+ReleaseDate: 2026-10-06
+Installers:
+- Architecture: x64
+  InstallerUrl: https://github.com/openpeeps/striptease/releases/download/0.1.0/striptease_windows-x86_64.zip
+  InstallerSha256: 0B7FB004822DBBA758C9829CF073184FF412E669B611827FB4B152E7C25F5511
+ManifestType: installer
+ManifestVersion: 1.12.0
