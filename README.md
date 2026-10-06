@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <code>nimble install striptease</code>
+  <code>nimble install striptease</code> / <code>clue install striptease --build</code>
 </p>
 
 <p align="center">
