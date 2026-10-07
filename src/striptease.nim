@@ -20,7 +20,7 @@ import striptease/cr3strip
 import striptease/heicstrip
 import striptease/textstrip
 
-const versionStr = "0.4.0"
+const versionStr = "0.2.0"
 
 const
   ansiReset = "\e[0m"

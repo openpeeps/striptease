@@ -1,0 +1,21 @@
+PackageIdentifier: OpenPeeps.Striptease
+PackageVersion: 0.2.0
+Platform:
+- Windows.Desktop
+MinimumOSVersion: 10.0.17763.0
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+- RelativeFilePath: striptease_windows-x86_64/striptease.exe
+  PortableCommandAlias: striptease
+UpgradeBehavior: unpack
+# Fill in after pushing tag 0.2.0: download the Windows zip from the
+# GitHub release and set its SHA256 below plus the release date.
+#   (Get-FileHash .\striptease_windows-x86_64.zip -Algorithm SHA256).Hash
+ReleaseDate: 2026-10-07
+Installers:
+- Architecture: x64
+  InstallerUrl: https://github.com/openpeeps/striptease/releases/download/0.2.0/striptease_windows-x86_64.zip
+  InstallerSha256: "0000000000000000000000000000000000000000000000000000000000000000"
+ManifestType: installer
+ManifestVersion: 1.12.0
