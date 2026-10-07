@@ -21,12 +21,14 @@
 - [x] RAW photos: `.cr2` `.nef` `.nrw` `.arw` `.srf` `.dng` (incl. Apple ProRAW) `.rw2` `.orf` `.pef` `.srw` `.tif` / `.tiff` — zeroes Artist, GPS, XMP and thumbnail metadata in place. MakerNote is preserved (it can hold serials/shutter count, but removing it breaks Apple decoders).
 - [x] Canon `.cr3` (EXIF `uuid` sanitised, XMP zeroed) and `.heic` / `.heif` (Exif item sanitised, XMP items zeroed, image items untouched). Stripped Live Photo stills and videos stay playable standalone but lose their Live pairing.
 - [x] Video-safe: size-preserving edits keep `stco`, `idx1` and `Cues` offsets valid, no re-encode
+- [x] Text: `.txt` `.text` `.md` `.markdown` `.json` `.csv` `.html` `.htm` `.xml` `.yaml` `.yml` — strips invisible Unicode, exotic spaces, bidi overrides, tag chars (safe-preserve defaults: emoji glue, paired embeddings, script joiners kept)
+- [x] Media `--inspect` JSON values are scrubbed for invisible carriers
 - [x] `--dry-run` and `--verbose` reporting, `--overwrite` protection by default
 - [x] `--inspect` prints embedded metadata as pretty JSON without touching files
 
 ## Usage
 ```
-striptease 0.1.0 – strip metadata from photos, PDFs, videos, and documents
+striptease 0.4.0 – strip metadata from photos, PDFs, videos, and documents
 
 MIT license | Made by Humans from OpenPeeps
   https://github.com/openpeeps/striptease
@@ -43,6 +45,7 @@ supported formats:
   audio: .wav | images: .jpg .jpeg .png .gif .webp
   raw: .cr2 .nef .nrw .arw .srf .dng .rw2 .orf .pef .srw .tif .tiff
   video: .mp4 .mov .m4v .avi .mkv .webm | canon raw: .cr3 | heic: .heic .heif .hif
+  text: .txt .text .md .markdown .json .csv .html .htm .xml .yaml .yml
 
 options:
   --dry-run           report only, write nothing
@@ -50,6 +53,12 @@ options:
   --verbose           per file kept and dropped chunks plus bytes saved
   --overwrite         overwrite existing files in out dir (default: skip)
   --keep-musical      WAV only: also keep cue, smpl, inst, acid chunks
+  --nfkc              text: accepted for compat, NFKC normalize is currently a no-op in the Nim build
+  --aggressive-homoglyphs text: map Cyrillic/fullwidth Latin confusables to ASCII
+  --no-normalize-spaces text: keep exotic spaces as-is (default: rewrite to U+0020)
+  --strip-emoji-glue  text: paranoid, also strip load-bearing invisibles (emoji glue, joiners, flag tags)
+  --strip-bidi        text: also strip legitimate RTL/LTR marks and isolates
+  --force-text        text: treat binary-looking input as text anyway
   -h, --help          show this help
   --version           show version
 
@@ -85,6 +94,19 @@ Keep WAV musical chunks (`cue`, `smpl`, `inst`, `acid`):
 ```sh
 striptease take.wav --out:./clean --keep-musical
 ```
+
+Strip invisible Unicode from text (safe defaults preserve emoji glue and RTL marks):
+
+```sh
+striptease notes.md --out:clean.md --verbose
+striptease notes.md --inspect
+```
+
+Languages whose typography relies on a non-breaking space (French `« … »`,
+the space before `; : ! ?`) should pass `--no-normalize-spaces`.
+Invisible carriers are still removed; only the space rewrite is skipped.
+`--nfkc` is accepted for CLI compat but NFKC normalize is currently a
+no-op in the Nim build (stdlib has no NFKC table).
 
 ### ❤ Contributions & Support
 - 🐛 Found a bug? [Create a new Issue](https://github.com/openpeeps/striptease/issues)

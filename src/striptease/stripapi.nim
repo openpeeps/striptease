@@ -22,6 +22,12 @@ type
     dryRun*: bool
     verbose*: bool
     inspect*: bool
+    nfkc*: bool
+    aggressiveHomoglyphs*: bool
+    normalizeSpaces*: bool
+    stripEmojiGlue*: bool
+    stripBidi*: bool
+    forceText*: bool
 
   StripResult* = object
     kept*: seq[ChunkReport]
@@ -34,7 +40,9 @@ type
 
 proc defaultOptions*(): StripOptions =
   StripOptions(keepMusical: false, overwrite: false, dryRun: false,
-      verbose: false, inspect: false)
+      verbose: false, inspect: false, nfkc: false,
+      aggressiveHomoglyphs: false, normalizeSpaces: true,
+      stripEmojiGlue: false, stripBidi: false, forceText: false)
 
 proc bytesSaved*(r: StripResult): int =
   r.bytesIn - r.bytesOut

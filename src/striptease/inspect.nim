@@ -12,6 +12,25 @@ import pngstrip
 import rawstrip
 import cr3strip
 import heicstrip
+import textstrip
+
+proc scrubJsonStrings*(node: JsonNode): JsonNode =
+  ## Recursively scrubs invisible carriers from JSON string values
+  ## (media metadata hardening). Keys are left untouched; numbers,
+  ## bools and nulls pass through.
+  case node.kind
+  of JString:
+    result = % scrubMediaString(node.getStr())
+  of JArray:
+    result = newJArray()
+    for item in node:
+      result.add(scrubJsonStrings(item))
+  of JObject:
+    result = newJObject()
+    for k, v in node:
+      result[k] = scrubJsonStrings(v)
+  else:
+    result = node
 
 func le32u(buf: string, pos: int): uint32 =
   result = uint32(ord(buf[pos])) or
@@ -713,32 +732,37 @@ proc inspectMkvData*(data: string): JsonNode =
 # ------------------------------------------------------------ dispatcher ---
 
 proc inspectData*(kind: string, data: string,
-    keepMusical = false): JsonNode =
+    keepMusical = false, aggressive = false,
+    stripEmojiGlue = false): JsonNode =
   ## Extracts embedded metadata for --inspect. Raises StripError on
   ## magic mismatch, UnsupportedFormatError on unknown kind.
+  ## Media string values are scrubbed for invisible carriers (safe
+  ## defaults); text returns Layer A hits.
   case kind
   of "wav":
-    result = inspectWavData(data, keepMusical)
+    result = scrubJsonStrings(inspectWavData(data, keepMusical))
   of "jpeg":
-    result = inspectJpegData(data)
+    result = scrubJsonStrings(inspectJpegData(data))
   of "png":
-    result = inspectPngData(data)
+    result = scrubJsonStrings(inspectPngData(data))
   of "gif":
-    result = inspectGifData(data)
+    result = scrubJsonStrings(inspectGifData(data))
   of "webp":
-    result = inspectWebpData(data)
+    result = scrubJsonStrings(inspectWebpData(data))
   of "mp4":
-    result = inspectMp4Data(data)
+    result = scrubJsonStrings(inspectMp4Data(data))
   of "avi":
-    result = inspectAviData(data)
+    result = scrubJsonStrings(inspectAviData(data))
   of "mkv":
-    result = inspectMkvData(data)
+    result = scrubJsonStrings(inspectMkvData(data))
   of "raw":
-    result = inspectRawData(data)
+    result = scrubJsonStrings(inspectRawData(data))
   of "cr3":
-    result = inspectCr3Data(data)
+    result = scrubJsonStrings(inspectCr3Data(data))
   of "heic":
-    result = inspectHeicData(data)
+    result = scrubJsonStrings(inspectHeicData(data))
+  of "text":
+    result = inspectTextData(data, aggressive, stripEmojiGlue)
   else:
     raise newException(UnsupportedFormatError,
       "unsupported format: " & kind)

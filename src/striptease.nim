@@ -1,6 +1,7 @@
 # striptease CLI entry point.
-# Supports WAV audio, JPEG/PNG/GIF/WebP images and MP4/MOV/AVI/MKV
-# video. Each format module plugs in through the dispatcher below.
+# Supports WAV audio, JPEG/PNG/GIF/WebP images, MP4/MOV/AVI/MKV
+# video and text (invisible Unicode scrub). Each format module
+# plugs in through the dispatcher below.
 
 import std/[os, parseopt, strutils, json]
 
@@ -17,8 +18,9 @@ import striptease/inspect
 import striptease/rawstrip
 import striptease/cr3strip
 import striptease/heicstrip
+import striptease/textstrip
 
-const versionStr = "0.3.0"
+const versionStr = "0.4.0"
 
 const
   ansiReset = "\e[0m"
@@ -47,7 +49,8 @@ proc errPrefix(): string =
 const supportedExts = [".wav", ".jpg", ".jpeg", ".png", ".gif", ".webp",
   ".mp4", ".mov", ".m4v", ".avi", ".mkv", ".webm", ".cr2", ".nef", ".nrw",
   ".arw", ".srf", ".dng", ".rw2", ".orf", ".pef", ".srw", ".tif", ".tiff",
-  ".cr3", ".heic", ".heif", ".hif"]
+  ".cr3", ".heic", ".heif", ".hif", ".txt", ".text", ".md", ".markdown",
+  ".json", ".csv", ".html", ".htm", ".xml", ".yaml", ".yml"]
 
 proc formatKind(path: string): string =
   ## Returns a short format key ("wav", "jpeg", ...) or "" if unsupported.
@@ -81,6 +84,13 @@ proc formatKind(path: string): string =
   if lower.endsWith(".heic") or lower.endsWith(".heif") or
       lower.endsWith(".hif"):
     return "heic"
+  if lower.endsWith(".txt") or lower.endsWith(".text") or
+      lower.endsWith(".md") or lower.endsWith(".markdown") or
+      lower.endsWith(".json") or lower.endsWith(".csv") or
+      lower.endsWith(".html") or lower.endsWith(".htm") or
+      lower.endsWith(".xml") or lower.endsWith(".yaml") or
+      lower.endsWith(".yml"):
+    return "text"
   return ""
 
 proc isSupportedPath(path: string): bool =
@@ -102,6 +112,7 @@ proc printHelp() =
   echo "  " & grey("audio: .wav | images: .jpg .jpeg .png .gif .webp")
   echo "  " & grey("raw: .cr2 .nef .nrw .arw .srf .dng .rw2 .orf .pef .srw .tif .tiff")
   echo "  " & grey("video: .mp4 .mov .m4v .avi .mkv .webm | canon raw: .cr3 | heic: .heic .heif .hif")
+  echo "  " & grey("text: .txt .text .md .markdown .json .csv .html .htm .xml .yaml .yml")
   echo ""
   echo label("options:")
   echo "  --dry-run           " & grey("report only, write nothing")
@@ -109,6 +120,12 @@ proc printHelp() =
   echo "  --verbose           " & grey("per file kept and dropped chunks plus bytes saved")
   echo "  --overwrite         " & grey("overwrite existing files in out dir (default: skip)")
   echo "  --keep-musical      " & grey("WAV only: also keep cue, smpl, inst, acid chunks")
+  echo "  --nfkc              " & grey("text: accepted for compat, NFKC normalize is currently a no-op in the Nim build")
+  echo "  --aggressive-homoglyphs " & grey("text: map Cyrillic/fullwidth Latin confusables to ASCII")
+  echo "  --no-normalize-spaces " & grey("text: keep exotic spaces as-is (default: rewrite to U+0020)")
+  echo "  --strip-emoji-glue  " & grey("text: paranoid, also strip load-bearing invisibles (emoji glue, joiners, flag tags)")
+  echo "  --strip-bidi        " & grey("text: also strip legitimate RTL/LTR marks and isolates")
+  echo "  --force-text        " & grey("text: treat binary-looking input as text anyway")
   echo "  -h, --help          " & grey("show this help")
   echo "  --version           " & grey("show version")
 
@@ -153,10 +170,10 @@ proc resolveOutPath(inPath: string, inputWasFile: bool, outArg: string,
   return outArg / extractFilename(inPath)
 
 proc stripByFormat(kind: string, data: string,
-    keepMusical: bool): tuple[output: string, res: StripResult] =
+    opts: StripOptions): tuple[output: string, res: StripResult] =
   case kind
   of "wav":
-    return stripWavData(data, keepMusical)
+    return stripWavData(data, opts.keepMusical)
   of "jpeg":
     return stripJpegData(data)
   of "png":
@@ -177,6 +194,8 @@ proc stripByFormat(kind: string, data: string,
     return stripCr3Data(data)
   of "heic":
     return stripHeicData(data)
+  of "text":
+    return stripTextData(data, opts)
   else:
     raise newException(UnsupportedFormatError,
       "unsupported format: " & kind)
@@ -192,8 +211,9 @@ proc inspectOneFile(inPath: string, opts: StripOptions,
     return false
   let kind = formatKind(inPath)
   try:
-    let (_, res) = stripByFormat(kind, data, opts.keepMusical)
-    let meta = inspectData(kind, data, opts.keepMusical)
+    let (_, res) = stripByFormat(kind, data, opts)
+    let meta = inspectData(kind, data, opts.keepMusical,
+      opts.aggressiveHomoglyphs, opts.stripEmojiGlue)
     var dropped = newJArray()
     for d in res.dropped:
       dropped.add(%* {"id": d.id.strip(), "size": int(d.size)})
@@ -217,7 +237,7 @@ proc processOneFile(inPath: string, outPath: string,
     return false
   var stripped: tuple[output: string, res: StripResult]
   try:
-    stripped = stripByFormat(formatKind(inPath), data, opts.keepMusical)
+    stripped = stripByFormat(formatKind(inPath), data, opts)
   except StripError as e:
     echo "FAIL " & inPath & ": " & e.msg
     return false
@@ -281,6 +301,18 @@ proc main(): int =
         opts.overwrite = true
       of "keep-musical":
         opts.keepMusical = true
+      of "nfkc":
+        opts.nfkc = true
+      of "aggressive-homoglyphs":
+        opts.aggressiveHomoglyphs = true
+      of "no-normalize-spaces":
+        opts.normalizeSpaces = false
+      of "strip-emoji-glue":
+        opts.stripEmojiGlue = true
+      of "strip-bidi":
+        opts.stripBidi = true
+      of "force-text":
+        opts.forceText = true
       else:
         echo errPrefix() & " unknown option --" & key
         printHelp()
